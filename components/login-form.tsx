@@ -23,7 +23,7 @@ export default function LoginForm() {
       const user = JSON.parse(localStorage.getItem('user') || '{}')
       console.log(user);
       if (user.role === UserRole.ADMIN) {
-        router.push('/admin-dashboard')
+        router.push('/admin')
       } else if (user.role === UserRole.WORKER) {
         router.push('/worker-dashboard')
       } else {
