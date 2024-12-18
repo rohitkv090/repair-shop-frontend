@@ -1,88 +1,130 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useAuth } from './AuthContext'
-import { Record } from '@/app/types/record'
+import { useState, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "./AuthContext";
+import { Record } from "@/app/types/record";
 
 export default function AdminRecordsList() {
-  const [records, setRecords] = useState<Record[]>([])
-  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
-  const { token } = useAuth()
+  const [records, setRecords] = useState<Record[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
-    fetchRecords()
-  }, [token])
+    if (!token) return; // Don't fetch records if token isn't available
+    fetchRecords();
+  }, [token]);
 
   const fetchRecords = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch(`http://localhost:4000/repair-records`, {
+      const response = await fetch("http://localhost:4000/repair-records", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      console.log(response);
-      const data = await response.json()
+      const data = await response.json();
       if (data.success) {
-        setRecords(data.data)
+        setRecords(data.data);
       } else {
-        console.error('Failed to fetch records:', data.message)
+        throw new Error(data.message);
       }
     } catch (error) {
-      console.error('Error fetching records:', error)
+      setError("Failed to fetch records. Please try again later.");
+      console.error("Error fetching records:", error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const getRecordById = async (id: string) => {
+    setError(null);
     try {
-      const response = await fetch(`http://localhost:4000/repair-records/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const response = await fetch(
+        `http://localhost:4000/repair-records/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      })
-      const data = await response.json()
+      );
+      const data = await response.json();
       if (data.success) {
-        setSelectedRecord(data.data)
+        setSelectedRecord(data.data);
       } else {
-        console.error('Failed to fetch record:', data.message)
+        throw new Error(data.message);
       }
     } catch (error) {
-      console.error('Error fetching record:', error)
+      setError("Failed to fetch record. Please try again later.");
+      console.error("Error fetching record:", error);
     }
-  }
+  };
 
   const updateRecord = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!selectedRecord) return
+    e.preventDefault();
+    if (!selectedRecord) return;
 
+    setError(null);
     try {
-      const response = await fetch(`http://localhost:4000/repair-records/${selectedRecord.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(selectedRecord)
-      })
-      const data = await response.json()
+      // Create a new object that excludes fields that shouldn't be updated
+      const {
+        customerName,
+        deviceTakenOn,
+        assigned_to,
+        images,
+        videos,
+        ...updatedRecord
+      } = selectedRecord;
+
+      const response = await fetch(
+        `http://localhost:4000/repair-records/${selectedRecord.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedRecord), // Send only editable fields (expectedRepairDate, status)
+        }
+      );
+
+      const data = await response.json();
       if (data.success) {
-        fetchRecords()
-        setSelectedRecord(null)
+        fetchRecords();
+        setSelectedRecord(null);
       } else {
-        console.error('Failed to update record:', data.message)
+        throw new Error(data.message);
       }
     } catch (error) {
-      console.error('Error updating record:', error)
+      setError("Failed to update record. Please try again later.");
+      console.error("Error updating record:", error);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
+      {error && <div className="text-red-500">{error}</div>}{" "}
+      {/* Display error messages */}
       <Table>
         <TableHeader>
           <TableRow>
@@ -90,80 +132,96 @@ export default function AdminRecordsList() {
             <TableHead>Expected Repair Date</TableHead>
             <TableHead>Device Taken On</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Assigned To</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
-          {records.map((record) => (
-            <TableRow key={record.id}>
-              <TableCell>{record.customerName}</TableCell>
-              <TableCell>{new Date(record.expectedRepairDate).toLocaleDateString()}</TableCell>
-              <TableCell>{new Date(record.deviceTakenOn).toLocaleDateString()}</TableCell>
-              <TableCell>{record.status}</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => getRecordById(record.id)}>Edit</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Record</DialogTitle>
-                    </DialogHeader>
-                    {selectedRecord && (
-                      <form onSubmit={updateRecord} className="space-y-4">
-                        <div>
-                          <Label htmlFor="customerName">Customer Name</Label>
-                          <Input
-                            id="customerName"
-                            value={selectedRecord.customerName}
-                            onChange={(e) => setSelectedRecord({...selectedRecord, customerName: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="expectedRepairDate">Expected Repair Date</Label>
-                          <Input
-                            id="expectedRepairDate"
-                            type="date"
-                            value={selectedRecord.expectedRepairDate.split('T')[0]}
-                            onChange={(e) => setSelectedRecord({...selectedRecord, expectedRepairDate: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="deviceTakenOn">Device Taken On</Label>
-                          <Input
-                            id="deviceTakenOn"
-                            type="date"
-                            value={selectedRecord.deviceTakenOn.split('T')[0]}
-                            onChange={(e) => setSelectedRecord({...selectedRecord, deviceTakenOn: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="imageUrls">Image URLs (comma-separated)</Label>
-                          <Input
-                            id="imageUrls"
-                            value={selectedRecord.imageUrls.join(',')}
-                            onChange={(e) => setSelectedRecord({...selectedRecord, imageUrls: e.target.value.split(',')})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="videoUrl">Video URL</Label>
-                          <Input
-                            id="videoUrl"
-                            value={selectedRecord.videoUrl}
-                            onChange={(e) => setSelectedRecord({...selectedRecord, videoUrl: e.target.value})}
-                          />
-                        </div>
-                        <Button type="submit">Update Record</Button>
-                      </form>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
+
+        {loading ? (
+          <div className="text-center py-4">Loading...</div> // Loading indicator
+        ) : (
+          <TableBody>
+            {records.map((record) => (
+              <TableRow key={record.id}>
+                <TableCell>{record.customerName}</TableCell>
+                <TableCell>
+                  {new Date(record.expectedRepairDate).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  {new Date(record.deviceTakenOn).toLocaleDateString()}
+                </TableCell>
+                <TableCell>{record.status}</TableCell>
+                <TableCell>{record.assigned_to?.name}</TableCell>{" "}
+                {/* Display assigned worker's name */}
+                <TableCell>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => getRecordById(record.id)}>
+                        Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Record</DialogTitle>
+                      </DialogHeader>
+                      {selectedRecord && (
+                        <form onSubmit={updateRecord} className="space-y-4">
+                          {/* Editable Field: Expected Repair Date */}
+                          <div>
+                            <Label htmlFor="expectedRepairDate">
+                              Expected Repair Date
+                            </Label>
+                            <Input
+                              id="expectedRepairDate"
+                              type="date"
+                              value={
+                                new Date(selectedRecord.expectedRepairDate)
+                                  .toISOString()
+                                  .split("T")[0]
+                              }
+                              onChange={(e) =>
+                                setSelectedRecord((prev) => ({
+                                  ...prev!,
+                                  expectedRepairDate: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+
+                          {/* Editable Field: Status (Dropdown) */}
+                          <div>
+                            <Label htmlFor="status">Status</Label>
+                            <select
+                              id="status"
+                              value={selectedRecord.status}
+                              onChange={(e) =>
+                                setSelectedRecord((prev) => ({
+                                  ...prev!,
+                                  status: e.target.value as
+                                    | "pending"
+                                    | "in-progress"
+                                    | "completed",
+                                }))
+                              }
+                              className="w-full p-2 border rounded"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="in-progress">In Progress</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </div>
+
+                          <Button type="submit">Update Record</Button>
+                        </form>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        )}
       </Table>
     </div>
-  )
+  );
 }
-

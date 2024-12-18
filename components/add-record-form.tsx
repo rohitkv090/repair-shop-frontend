@@ -1,44 +1,79 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function AddRecordForm() {
-  const [customerName, setCustomerName] = useState('')
-  const [expectedRepairDate, setExpectedRepairDate] = useState('')
-  const [deviceTakenOn, setDeviceTakenOn] = useState('')
-  const [description, setDescription] = useState('')
-  const [images, setImages] = useState<File[]>([])
-  const [video, setVideo] = useState<File | null>(null)
+  const [customerName, setCustomerName] = useState("");
+  const [expectedRepairDate, setExpectedRepairDate] = useState("");
+  const [deviceTakenOn, setDeviceTakenOn] = useState("");
+  // const [description, setDescription] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setImages(Array.from(e.target.files))
+      setImages(Array.from(e.target.files));
     }
-  }
-
+  };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setVideo(e.target.files[0])
+      setVideo(e.target.files[0]);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    // Simulate API call to add record
-    console.log('Adding new record:', { customerName, expectedRepairDate, deviceTakenOn, description, images, video })
+    e.preventDefault();
+
+    // Prepare the FormData object
+    const formData = new FormData();
+    formData.append("customerName", customerName);
+    formData.append("expectedRepairDate", expectedRepairDate);
+    formData.append("deviceTakenOn", deviceTakenOn);
+    // formData.append("description", description);
+
+    // Append images (can be multiple)
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+
+    // Append video (can be one or multiple, in case of multiple upload)
+    if (video) {
+      formData.append("videos", video);
+    }
+
+    // Make the API request
+    try {
+      const response = await fetch("http://localhost:4000/repair-records", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer your-token-here", // Replace with your actual token
+        },
+        body: formData, // Send the FormData
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log("Record added successfully:", data);
+      } else {
+        console.error("Failed to add record:", data.message);
+      }
+    } catch (error) {
+      console.error("Error submitting the form:", error);
+    }
+
     // Reset form after submission
-    setCustomerName('')
-    setExpectedRepairDate('')
-    setDeviceTakenOn('')
-    setDescription('')
-    setImages([])
-    setVideo(null)
-  }
+    setCustomerName("");
+    setExpectedRepairDate("");
+    setDeviceTakenOn("");
+    // setDescription("");
+    setImages([]);
+    setVideo(null);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +106,7 @@ export default function AddRecordForm() {
           required
         />
       </div>
-      <div>
+      {/* <div>
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
@@ -79,7 +114,7 @@ export default function AddRecordForm() {
           onChange={(e) => setDescription(e.target.value)}
           required
         />
-      </div>
+      </div> */}
       <div>
         <Label htmlFor="images">Images (optional)</Label>
         <Input
@@ -101,6 +136,5 @@ export default function AddRecordForm() {
       </div>
       <Button type="submit">Add Record</Button>
     </form>
-  )
+  );
 }
-
