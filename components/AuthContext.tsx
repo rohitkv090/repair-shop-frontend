@@ -3,7 +3,7 @@
 import { UserRole } from '@/enums/enum'
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
-interface User {
+export interface User {
   id: string
   name: string
   email: string
@@ -24,8 +24,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null)
 
   useEffect(() => {
-
-
 
     const storedUser = localStorage.getItem('user')
     const storedToken = localStorage.getItem('token')

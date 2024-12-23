@@ -1,15 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from './AuthContext'
+import { useAuth, User } from './AuthContext'
 import { UserRole } from '@/enums/enum'
 
 export default function LoginForm() {
+
+  // create a effect to check if the user is already logged in
+  useEffect(() => {
+    const storedUser:User|any = localStorage.getItem('user')
+    if (storedUser) {
+      const user = JSON.parse(storedUser)
+      if (user.role === UserRole.ADMIN) {
+        router.push('/admin')
+      } else if (user.role === UserRole.WORKER) {
+        router.push('/worker-dashboard')
+      }
+    }
+  }, [])
+
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
