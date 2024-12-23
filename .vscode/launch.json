@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Next.js in Chrome",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}", // Root of the Next.js project
+            "sourceMaps": true,
+            "skipFiles": [
+                "node_modules/**",
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "chrome",
+            "request": "attach",
+            "name": "Attach to Next.js in Chrome",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}", // Root of the Next.js project
+            "sourceMaps": true,
+            "skipFiles": [
+                "node_modules/**",
+                "<node_internals>/**"
+            ]
+        }
+    ]
+}
