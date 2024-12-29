@@ -20,7 +20,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "./AuthContext";
-import { Record } from "@/app/types/record";
+import { MediaViewer } from "@/components/MediaViewer";
+
+type Record = {
+  id: string;
+  customerName: string;
+  expectedRepairDate: string;
+  deviceTakenOn: string;
+  status: "pending" | "in-progress" | "completed";
+  assigned_to?: {
+    id: string;
+    name: string;
+  };
+};
 
 export default function AdminRecordsList() {
   const [records, setRecords] = useState<Record[]>([]);
@@ -91,8 +103,8 @@ export default function AdminRecordsList() {
         customerName,
         deviceTakenOn,
         assigned_to,
-        images,
-        videos,
+        // images,
+        // videos,
         ...updatedRecord
       } = selectedRecord;
 
@@ -133,7 +145,7 @@ export default function AdminRecordsList() {
             <TableHead>Device Taken On</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Assigned To</TableHead>
-            <TableHead>Action</TableHead>
+            <TableHead>Media</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -153,6 +165,9 @@ export default function AdminRecordsList() {
                 <TableCell>{record.status}</TableCell>
                 <TableCell>{record.assigned_to?.name}</TableCell>{" "}
                 {/* Display assigned worker's name */}
+                <TableCell>
+                  <MediaViewer recordId={parseInt(record.id)} />
+                </TableCell>
                 <TableCell>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -225,3 +240,4 @@ export default function AdminRecordsList() {
     </div>
   );
 }
+
