@@ -9,7 +9,6 @@ export interface User {
   email: string
   role: UserRole.ADMIN | UserRole.WORKER
 }
-
 interface AuthContextType {
   user: User | null
   token: string | null

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Wrench, Users } from 'lucide-react'
+import { LayoutDashboard, Wrench, Users, LogOut } from 'lucide-react'
 
 import {
   Sidebar,
@@ -14,13 +14,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
   { title: 'Repair Records', icon: Wrench, href: '/admin/repair-records' },
   { title: 'Workers', icon: Users, href: '/admin/workers' },
 ]
+
+const handleLogout = () => {
+  localStorage.clear();
+  window.location.href = '/';
+}
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -49,6 +56,16 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <Button
+          variant="ghost"
+          className="w-full justify-start"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log out</span>
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   )
 }
