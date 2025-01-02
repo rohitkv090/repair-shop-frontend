@@ -22,16 +22,25 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "./AuthContext";
 import { MediaViewer } from "@/components/MediaViewer";
 
+type MediaFile = {
+  id: number;
+  url: string;
+};
+
 type Record = {
-  id: string;
+  id: number;
   customerName: string;
   expectedRepairDate: string;
   deviceTakenOn: string;
   status: "pending" | "in-progress" | "completed";
   assigned_to?: {
-    id: string;
+    id: number;
     name: string;
   };
+  images: MediaFile[];
+  videos: MediaFile[];
+  description: string;
+  customerNumber: string;
 };
 
 export default function AdminRecordsList() {
@@ -42,7 +51,7 @@ export default function AdminRecordsList() {
   const { token } = useAuth();
 
   useEffect(() => {
-    if (!token) return; // Don't fetch records if token isn't available
+    if (!token) return;
     fetchRecords();
   }, [token]);
 
@@ -69,7 +78,7 @@ export default function AdminRecordsList() {
     }
   };
 
-  const getRecordById = async (id: string) => {
+  const getRecordById = async (id: number) => {
     setError(null);
     try {
       const response = await fetch(
@@ -98,15 +107,7 @@ export default function AdminRecordsList() {
 
     setError(null);
     try {
-      // Create a new object that excludes fields that shouldn't be updated
-      const {
-        customerName,
-        deviceTakenOn,
-        assigned_to,
-        // images,
-        // videos,
-        ...updatedRecord
-      } = selectedRecord;
+      const { customerName, deviceTakenOn, assigned_to, images, videos, ...updatedRecord } = selectedRecord;
 
       const response = await fetch(
         `http://localhost:4000/repair-records/${selectedRecord.id}`,
@@ -116,7 +117,7 @@ export default function AdminRecordsList() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedRecord), // Send only editable fields (expectedRepairDate, status)
+          body: JSON.stringify(updatedRecord),
         }
       );
 
@@ -135,27 +136,35 @@ export default function AdminRecordsList() {
 
   return (
     <div className="space-y-4">
-      {error && <div className="text-red-500">{error}</div>}{" "}
-      {/* Display error messages */}
+      {error && <div className="text-red-500">{error}</div>}
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Customer Name</TableHead>
+            <TableHead>Customer Phone</TableHead>
             <TableHead>Expected Repair Date</TableHead>
             <TableHead>Device Taken On</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Assigned To</TableHead>
             <TableHead>Media</TableHead>
+            <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
 
         {loading ? (
-          <div className="text-center py-4">Loading...</div> // Loading indicator
+          <TableBody>
+            <TableRow>
+              <TableCell colSpan={7} className="text-center">
+                Loading...
+              </TableCell>
+            </TableRow>
+          </TableBody>
         ) : (
           <TableBody>
             {records.map((record) => (
               <TableRow key={record.id}>
                 <TableCell>{record.customerName}</TableCell>
+                <TableCell>{record.customerNumber}</TableCell>
                 <TableCell>
                   {new Date(record.expectedRepairDate).toLocaleDateString()}
                 </TableCell>
@@ -163,10 +172,13 @@ export default function AdminRecordsList() {
                   {new Date(record.deviceTakenOn).toLocaleDateString()}
                 </TableCell>
                 <TableCell>{record.status}</TableCell>
-                <TableCell>{record.assigned_to?.name}</TableCell>{" "}
-                {/* Display assigned worker's name */}
+                <TableCell>{record.assigned_to?.name}</TableCell>
                 <TableCell>
-                  <MediaViewer recordId={parseInt(record.id)} />
+                  <MediaViewer
+                    recordId={record.id}
+                    images={record.images}
+                    videos={record.videos}
+                  />
                 </TableCell>
                 <TableCell>
                   <Dialog>
@@ -181,7 +193,6 @@ export default function AdminRecordsList() {
                       </DialogHeader>
                       {selectedRecord && (
                         <form onSubmit={updateRecord} className="space-y-4">
-                          {/* Editable Field: Expected Repair Date */}
                           <div>
                             <Label htmlFor="expectedRepairDate">
                               Expected Repair Date
@@ -203,7 +214,6 @@ export default function AdminRecordsList() {
                             />
                           </div>
 
-                          {/* Editable Field: Status (Dropdown) */}
                           <div>
                             <Label htmlFor="status">Status</Label>
                             <select
@@ -225,6 +235,53 @@ export default function AdminRecordsList() {
                               <option value="completed">Completed</option>
                             </select>
                           </div>
+                          {/* add for the  description also */}
+                          <div>
+                            <Label htmlFor="description">Description</Label>
+                            <Input
+                              id="description"
+                              value={selectedRecord.description}
+                              onChange={(e) =>
+                                setSelectedRecord((prev) => ({
+                                  ...prev!,
+                                  description: e.target.value,
+                                }))
+                              }
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="assigned_to">Assigned To</Label>
+                            <Input
+                              id="assigned_to"
+                              value={selectedRecord.assigned_to?.name || ""}
+                              onChange={(e) =>
+                                setSelectedRecord((prev) => ({
+                                  ...prev!,
+                                  assigned_to: {
+                                    id: 0,
+                                    name: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+                          {/* add for customerNumber also */}
+                          <div>
+                            <Label htmlFor="customerNumber">Customer Phone</Label>
+                            <Input
+                              id="customerNumber"
+                              value={selectedRecord.customerNumber}
+                              onChange={(e) =>
+                                setSelectedRecord((prev) => ({
+                                  ...prev!,
+                                  customerNumber: e.target.value,
+                                }))
+                              }
+                              required
+                            />
+                          </div>
+
 
                           <Button type="submit">Update Record</Button>
                         </form>
@@ -232,6 +289,7 @@ export default function AdminRecordsList() {
                     </DialogContent>
                   </Dialog>
                 </TableCell>
+      
               </TableRow>
             ))}
           </TableBody>

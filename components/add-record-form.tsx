@@ -10,9 +10,10 @@ export default function AddRecordForm() {
   const [customerName, setCustomerName] = useState("");
   const [expectedRepairDate, setExpectedRepairDate] = useState("");
   const [deviceTakenOn, setDeviceTakenOn] = useState("");
-  // const [description, setDescription] = useState("");
+  const [description, setDescription] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
+  const [customerNumber, setCustomerNumber] = useState("");
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -34,7 +35,8 @@ export default function AddRecordForm() {
     formData.append("customerName", customerName);
     formData.append("expectedRepairDate", expectedRepairDate);
     formData.append("deviceTakenOn", deviceTakenOn);
-    // formData.append("description", description);
+    formData.append("description", description);
+    formData.append("customerNumber", customerNumber);
 
     // Append images (can be multiple)
     images.forEach((image) => {
@@ -70,9 +72,10 @@ export default function AddRecordForm() {
     setCustomerName("");
     setExpectedRepairDate("");
     setDeviceTakenOn("");
-    // setDescription("");
+    setDescription("");
     setImages([]);
     setVideo(null);
+    setCustomerNumber("");
   };
 
   return (
@@ -83,6 +86,15 @@ export default function AddRecordForm() {
           id="customerName"
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="customerNumber">Customer Mobile Number</Label>
+        <Input
+          id="customerNumber"
+          value={customerNumber}
+          onChange={(e) => setCustomerNumber(e.target.value)}
           required
         />
       </div>
@@ -106,7 +118,7 @@ export default function AddRecordForm() {
           required
         />
       </div>
-      {/* <div>
+      <div>
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
@@ -114,7 +126,7 @@ export default function AddRecordForm() {
           onChange={(e) => setDescription(e.target.value)}
           required
         />
-      </div> */}
+      </div>
       <div>
         <Label htmlFor="images">Images (optional)</Label>
         <Input
