@@ -1,17 +1,42 @@
-export interface Record {
-  id: string;
+export type Record = {
+  id: number;
   customerName: string;
   expectedRepairDate: string;
   deviceTakenOn: string;
-  images: { id: string; repairRecordId: string; url: string }[]; // Updated to reflect image objects with ids
-  videos: { id: string; repairRecordId: string; url: string }[]; // Updated to reflect video objects with ids
-  assigned_to: {
-    id: string;
+  status: "pending" | "in-progress" | "completed";
+  assigned_to?: {
+    id: number;
     name: string;
-    email: string;
-    role: "ADMIN" | "WORKER"; // assuming roles are 'ADMIN' or 'WORKER'
-  } | null; // Assigned to can be null if no worker is assigned
-  status: "pending" | "accepted" | "in-progress" | "completed";
+  };
+  images: MediaFile[];
+  videos: MediaFile[];
+  description: string | null;
+  customerNumber: string;
+  deviceCompany: string | null;
+  deviceModel: string | null;
+  deviceColor: string | null;
+  devicePassword: string | null;
+  deviceIssue: string | null;
   createdAt: string;
   updatedAt: string;
-}
+  repairItems: RepairItem[];
+  finalCost: number | null;
+};
+
+type MediaFile = {
+  id: number;
+  url: string;
+};
+
+type RepairItem = {
+  id: number;
+  repairRecordId: number;
+  itemId: number;
+  quantity: number;
+  priceAtTime: number;
+  description: string;
+  itemName: string;
+  itemDescription: string;
+  createdAt: string;
+  updatedAt: string;
+};

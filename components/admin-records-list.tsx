@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -8,27 +8,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "./AuthContext";
-import { MediaViewer } from "@/components/MediaViewer";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useAuth } from "./AuthContext"
+import { MediaViewer } from "@/components/MediaViewer"
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select";
-import { Badge } from "./ui/badge";
-import { Search, Edit, Filter } from "lucide-react";
+} from "@/components/ui/select"
+import { Badge } from "./ui/badge"
+import { Search, Edit, Filter, Download } from "lucide-react"
+import toast from 'react-hot-toast'
 
 type MediaFile = {
   id: number;
@@ -70,6 +71,7 @@ export type Record = {
   createdAt: string;
   updatedAt: string;
   repairItems: RepairItem[];
+  finalCost: number;
 };
 
 export default function AdminRecordsList() {
@@ -214,6 +216,33 @@ export default function AdminRecordsList() {
     }
   };
 
+  const handleDownloadReceipt = async (recordId: number) => {
+    try {
+      const response = await fetch(`http://localhost:4000/repair-records/${recordId}/receipt`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download receipt');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt-${recordId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast.error('Failed to download receipt');
+    }
+  };
+
   return (
     <div className="space-y-4">
       {error && <div className="text-red-500 bg-red-50 p-3 rounded-md">{error}</div>}
@@ -250,6 +279,7 @@ export default function AdminRecordsList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID</TableHead>
               <TableHead>Customer Name</TableHead>
               <TableHead>Customer Phone</TableHead>
               <TableHead>Expected Repair</TableHead>
@@ -263,7 +293,7 @@ export default function AdminRecordsList() {
           <TableBody>
             {!isMounted ? null : loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10">
+                <TableCell colSpan={8} className="text-center py-10">
                   <div className="flex items-center justify-center text-muted-foreground">
                     Loading records...
                   </div>
@@ -271,7 +301,7 @@ export default function AdminRecordsList() {
               </TableRow>
             ) : filteredRecords.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10">
+                <TableCell colSpan={8} className="text-center py-10">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Filter className="h-8 w-8 mb-2" />
                     <span>No records found</span>
@@ -290,6 +320,7 @@ export default function AdminRecordsList() {
                     }
                   }}
                 >
+                  <TableCell>{record.id}</TableCell>
                   <TableCell>{record.customerName}</TableCell>
                   <TableCell>{record.customerNumber}</TableCell>
                   <TableCell suppressHydrationWarning>
@@ -314,7 +345,7 @@ export default function AdminRecordsList() {
                       />
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -324,6 +355,16 @@ export default function AdminRecordsList() {
                       }}
                     >
                       <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadReceipt(record.id);
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -347,9 +388,39 @@ export default function AdminRecordsList() {
             <DialogTitle>Edit Record</DialogTitle>
           </DialogHeader>
           {selectedRecord && isMounted && (
-            <form className="space-y-4" onSubmit={(e) => {
+            <form className="space-y-4" onSubmit={async (e) => {
               e.preventDefault();
-              // Add your form submission logic here
+              try {
+                const response = await fetch(`http://localhost:4000/repair-records/${selectedRecord.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    status: selectedRecord.status,
+                    assignedToId: selectedRecord.assigned_to?.id,
+                    expectedRepairDate: selectedRecord.expectedRepairDate,
+                    finalCost: selectedRecord.finalCost
+                  }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                  setRecords(prev => prev.map(record => 
+                    record.id === selectedRecord.id 
+                      ? { ...record, ...data.data }
+                      : record
+                  ));
+                  setSelectedRecord(null);
+                  toast.success('Record updated successfully');
+                } else {
+                  toast.error(data.message || 'Failed to update record');
+                }
+              } catch (error) {
+                console.error('Error updating record:', error);
+                toast.error('Failed to update record');
+              }
             }}>
               <div className="space-y-4">
                 <div>
@@ -374,32 +445,27 @@ export default function AdminRecordsList() {
                 <div>
                   <Label>Assigned To</Label>
                   <Select
-                    value={selectedRecord.assigned_to?.name || ""}
-                    onValueChange={(name) => {
-                      const selectedWorker = workers.find(
-                        (worker) => worker.name === name
-                      );
-                      setSelectedRecord((prev) => ({
-                        ...prev!,
-                        assigned_to: selectedWorker,
-                      }));
+                    value={selectedRecord.assigned_to?.id?.toString() || ""}
+                    onValueChange={(value) => {
+                      const selectedWorker = workers.find(w => w.id.toString() === value);
+                      setSelectedRecord(prev => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          assigned_to: selectedWorker || undefined
+                        };
+                      });
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a worker" />
                     </SelectTrigger>
                     <SelectContent>
-                      {workers.length > 0 ? (
-                        workers.map((worker) => (
-                          <SelectItem key={worker.id} value={worker.name}>
-                            {worker.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="" disabled>
-                          No workers available
+                      {workers.map(worker => (
+                        <SelectItem key={worker.id} value={worker.id.toString()}>
+                          {worker.name}
                         </SelectItem>
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -410,11 +476,27 @@ export default function AdminRecordsList() {
                     type="datetime-local"
                     value={selectedRecord.expectedRepairDate.slice(0, 16)}
                     onChange={(e) =>
-                      setSelectedRecord((prev) => ({
+                      setSelectedRecord(prev => ({
                         ...prev!,
                         expectedRepairDate: e.target.value,
                       }))
                     }
+                  />
+                </div>
+
+                <div>
+                  <Label>Final Cost</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={selectedRecord.finalCost || ''}
+                    onChange={(e) =>
+                      setSelectedRecord(prev => ({
+                        ...prev!,
+                        finalCost: Number(e.target.value)
+                      }))
+                    }
+                    placeholder="Enter final cost"
                   />
                 </div>
               </div>
@@ -436,7 +518,7 @@ export default function AdminRecordsList() {
 
       {/* View Record Details Dialog */}
       <Dialog 
-        open={!!viewingRecord && !selectedRecord} // Only show if edit dialog is not open
+        open={!!viewingRecord && !selectedRecord} 
         onOpenChange={(open) => {
           if (!open) {
             setViewingRecord(null);
@@ -464,10 +546,10 @@ export default function AdminRecordsList() {
                 </div>
               </div>
 
-              {/* Status and Assignment */}
+              {/* Status, Assignment and Cost */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Status & Assignment</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold mb-3">Status & Details</h3>
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label className="font-bold">Status</Label>
                     <div className="mt-1">
@@ -479,6 +561,10 @@ export default function AdminRecordsList() {
                   <div>
                     <Label className="font-bold">Assigned To</Label>
                     <p className="mt-1">{viewingRecord.assigned_to?.name || 'Unassigned'}</p>
+                  </div>
+                  <div>
+                    <Label className="font-bold">Final Cost</Label>
+                    <p className="mt-1">₹{viewingRecord.finalCost || 'Not set'}</p>
                   </div>
                 </div>
               </div>
