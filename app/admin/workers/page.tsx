@@ -43,7 +43,7 @@ export default function Workers() {
 
   useEffect(() => {
     fetchWorkers();
-  }, []);
+  }, );
 
   const fetchWorkers = async () => {
     setIsLoading(true);

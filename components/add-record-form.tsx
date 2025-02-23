@@ -86,7 +86,6 @@ export default function AddRecordForm() {
           id="customerName"
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
-          required
         />
       </div>
       <div>
@@ -95,7 +94,6 @@ export default function AddRecordForm() {
           id="customerNumber"
           value={customerNumber}
           onChange={(e) => setCustomerNumber(e.target.value)}
-          required
         />
       </div>
       <div>
@@ -105,7 +103,6 @@ export default function AddRecordForm() {
           type="date"
           value={expectedRepairDate}
           onChange={(e) => setExpectedRepairDate(e.target.value)}
-          required
         />
       </div>
       <div>
@@ -115,7 +112,6 @@ export default function AddRecordForm() {
           type="date"
           value={deviceTakenOn}
           onChange={(e) => setDeviceTakenOn(e.target.value)}
-          required
         />
       </div>
       <div>
@@ -124,7 +120,6 @@ export default function AddRecordForm() {
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          required
         />
       </div>
       <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ type MediaFile = {
   url: string;
 };
 
-type Record = {
+export type Record = {
   id: number;
   customerName: string;
   expectedRepairDate: string;

@@ -22,7 +22,7 @@ export default function LoginForm() {
         router.push('/worker-dashboard')
       }
     }
-  }, [])
+  })
 
 
   const [email, setEmail] = useState('')
