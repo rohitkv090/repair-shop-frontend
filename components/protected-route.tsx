@@ -7,7 +7,7 @@ import { UserRole } from '@/enums/enum'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedRoles: (UserRole.ADMIN | UserRole.WORKER)[]
+  allowedRoles?: UserRole[]
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -15,14 +15,23 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   const router = useRouter()
 
   useEffect(() => {
-    if (!user || !token) {
-      router.push('/')
-    } else if (!allowedRoles.includes(user.role)) {
-      router.push('/unauthorized')
+    const checkAuth = () => {
+      if (!user || !token) {
+        router.push('/')
+        return
+      }
+
+      if (allowedRoles && !allowedRoles.includes(user.role)) {
+        router.push('/unauthorized')
+        return
+      }
     }
+
+    checkAuth()
   }, [user, token, router, allowedRoles])
 
-  if (!user || !token || !allowedRoles.includes(user.role)) {
+  // Show nothing while checking authentication
+  if (!user || !token || (allowedRoles && !allowedRoles.includes(user.role))) {
     return null
   }
 

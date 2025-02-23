@@ -1,16 +1,25 @@
-import { AdminSidebar } from '@/components/admin-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+'use client'
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import ProtectedRoute from '@/components/protected-route'
+import { UserRole } from '@/enums/enum'
+import AdminSidebar from '@/components/admin-sidebar'
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <SidebarProvider>
-      <div className="flex h-screen">
-        <AdminSidebar />
-        <SidebarInset className="flex-1 overflow-auto">
+    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+      <div className="h-screen flex">
+        <div className="hidden md:flex w-64 flex-col fixed h-full">
+          <AdminSidebar />
+        </div>
+        <main className="md:ml-64 flex-1 overflow-y-auto bg-slate-50">
           {children}
-        </SidebarInset>
+        </main>
       </div>
-    </SidebarProvider>
+    </ProtectedRoute>
   )
 }
 

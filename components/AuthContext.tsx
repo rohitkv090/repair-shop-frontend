@@ -22,44 +22,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
 
-  useEffect(() => {
+  const checkTokenExpiration = (token: string) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        logout();
+        return false;
+      }
+      return true;
+    } catch (e) {
+      logout();
+      return false;
+    }
+  };
 
+  useEffect(() => {
     const storedUser = localStorage.getItem('user')
     const storedToken = localStorage.getItem('token')
 
-
-  if (storedUser && storedToken) {
-    try {
-      const parsedUser = JSON.parse(storedUser)
-      setUser(parsedUser)
-      setToken(storedToken)
-    } catch (error) {
-      console.error('Error parsing user:', error)
+    if (storedUser && storedToken) {
+      try {
+        if (checkTokenExpiration(storedToken)) {
+          const parsedUser = JSON.parse(storedUser)
+          setUser(parsedUser)
+          setToken(storedToken)
+        }
+      } catch (error) {
+        console.error('Error parsing user:', error)
+        logout()
+      }
     }
-  }
   }, [])
 
   const login = async (email: string, password: string) => {
     try {
-      console.log(process.env.BACKEND_URL);
-      const response = await fetch(`http://localhost:4000/auth/login`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const response = await fetch(`${backendUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      })
-      const data = await response.json()
-      console.log(data);
-      if (data.success) {
-        setUser(data.data.user)
-        setToken(data.data.accessToken)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
-        localStorage.setItem('token', data.data.accessToken)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      if (data.success && data.data) {
+        const { user, accessToken } = data.data;
+        setUser(user);
+        setToken(accessToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', accessToken);
       } else {
-        throw new Error(data.message)
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Login failed:', error)
-      throw error
+      console.error('Login failed:', error);
+      throw error;
     }
   }
 
@@ -68,6 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null)
     localStorage.removeItem('user')
     localStorage.removeItem('token')
+    // Clear any other sensitive data
+    localStorage.clear()
+    // Force reload to clear any cached state
+    window.location.href = '/';
   }
 
   return (

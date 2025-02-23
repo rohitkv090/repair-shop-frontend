@@ -1,7 +1,9 @@
+'use client'
 import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Play } from 'lucide-react';
+import { X, Play, Image as ImageIcon } from 'lucide-react';
+import { useAuth } from './AuthContext';
 
 interface MediaFile {
   id: number;
@@ -15,6 +17,7 @@ interface MediaViewerProps {
 }
 
 export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const [loadedMedia, setLoadedMedia] = useState<{ type: 'image' | 'video', url: string }[]>([]);
   const [activeMedia, setActiveMedia] = useState<{ type: 'image' | 'video', url: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,12 +25,16 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const fetchMedia = async () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication token not found');
       }
@@ -66,6 +73,12 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
     if (open && loadedMedia.length === 0) {
       fetchMedia();
     }
+    if (!open) {
+      // Cleanup object URLs when dialog closes
+      loadedMedia.forEach(media => URL.revokeObjectURL(media.url));
+      setLoadedMedia([]);
+      setActiveMedia(null);
+    }
   };
 
   useEffect(() => {
@@ -81,10 +94,19 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
     }
   };
 
+  const totalFiles = images.length + videos.length;
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>View Media</Button>
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <ImageIcon className="h-4 w-4" />
+          {totalFiles} {totalFiles === 1 ? 'file' : 'files'}
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
@@ -99,22 +121,24 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
                 {loadedMedia.map((media, index) => (
                   <div
                     key={index}
-                    className="cursor-pointer relative"
+                    className={`cursor-pointer relative rounded overflow-hidden ${
+                      activeMedia === media ? 'ring-2 ring-primary' : ''
+                    }`}
                     onClick={() => handleMediaClick(media)}
                   >
                     {media.type === 'image' ? (
                       <img
                         src={media.url}
                         alt={`Media ${index + 1}`}
-                        className="w-full h-24 object-cover rounded"
+                        className="w-full h-24 object-cover"
                       />
                     ) : (
-                      <div className="relative w-full h-24">
+                      <div className="relative w-full h-24 bg-gray-100">
                         <video
                           src={media.url}
-                          className="w-full h-full object-cover rounded"
+                          className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                           <Play className="w-8 h-8 text-white" />
                         </div>
                       </div>
@@ -135,18 +159,23 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
                     <X className="h-4 w-4" />
                   </Button>
                   {activeMedia.type === 'image' ? (
-                    <img src={activeMedia.url} alt="Selected media" className="max-w-full max-h-full object-contain" />
+                    <img 
+                      src={activeMedia.url} 
+                      alt="Selected media" 
+                      className="max-w-full max-h-[60vh] object-contain"
+                    />
                   ) : (
                     <video
                       ref={videoRef}
                       src={activeMedia.url}
                       controls
-                      className="max-w-full max-h-full object-contain"
+                      autoPlay
+                      className="max-w-full max-h-[60vh]"
                     />
                   )}
                 </>
               ) : (
-                <p className="text-gray-500">Select an image or video to view</p>
+                <p className="text-muted-foreground">Select an image or video to view</p>
               )}
             </div>
           </div>
