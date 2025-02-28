@@ -23,9 +23,7 @@ export default function AddEditItemDialog({
 }: AddEditItemDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    price: '',
-    stock: ''
+    description: ''
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -33,16 +31,12 @@ export default function AddEditItemDialog({
     if (item) {
       setFormData({
         name: item.name,
-        description: item.description,
-        price: item.price.toString(),
-        stock: item.stock.toString()
+        description: item.description
       })
     } else {
       setFormData({
         name: '',
-        description: '',
-        price: '',
-        stock: ''
+        description: ''
       })
     }
   }, [item])
@@ -54,9 +48,7 @@ export default function AddEditItemDialog({
     try {
       const itemData = {
         name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock)
+        description: formData.description
       }
 
       let response
@@ -115,35 +107,6 @@ export default function AddEditItemDialog({
               required
               disabled={isLoading}
             />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock</Label>
-              <Input
-                id="stock"
-                name="stock"
-                type="number"
-                min="0"
-                value={formData.stock}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
           </div>
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>

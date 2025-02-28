@@ -12,13 +12,13 @@ export async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('token');
   
-  const headers: HeadersInit = {
+  const headers = new Headers({
     'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
+    ...options.headers as Record<string, string>
+  });
+  
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   try {
@@ -69,11 +69,5 @@ export const itemsApi = {
   deleteItem: (id: string) => 
     apiRequest(`/items/${id}`, {
       method: 'DELETE'
-    }),
-
-  updateStock: (id: string, quantity: number) => 
-    apiRequest<Item>(`/items/${id}/stock`, {
-      method: 'PUT',
-      body: JSON.stringify({ quantity })
     })
 };

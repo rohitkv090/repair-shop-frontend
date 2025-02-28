@@ -84,6 +84,8 @@ export default function AdminRecordsList() {
   const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [availableItems, setAvailableItems] = useState<{ id: number; name: string; description: string }[]>([]);
+  const [repairItems, setRepairItems] = useState<RepairItem[]>([]);
 
   // Client-side only rendering for date-dependent content
   const [isMounted, setIsMounted] = useState(false);
@@ -243,6 +245,89 @@ export default function AdminRecordsList() {
     }
   };
 
+  useEffect(() => {
+    if (selectedRecord && token) {
+      // Fetch available items when the edit dialog opens
+      const fetchItems = async () => {
+        try {
+          const response = await fetch('http://localhost:4000/items', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          const data = await response.json();
+          if (data.success) {
+            setAvailableItems(data.data);
+          } else {
+            console.error('Failed to fetch items:', data.message);
+          }
+        } catch (error) {
+          console.error('Error fetching items:', error);
+        }
+      };
+
+      fetchItems();
+      
+      // Initialize repair items from the selected record
+      if (selectedRecord.repairItems && selectedRecord.repairItems.length > 0) {
+        setRepairItems(selectedRecord.repairItems.map(item => ({
+          id: item.id,
+          repairRecordId: item.repairRecordId,
+          itemId: item.itemId,
+          quantity: item.quantity,
+          priceAtTime: item.priceAtTime,
+          description: item.description || '',
+          itemName: item.itemName,
+          itemDescription: item.itemDescription,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        })));
+      } else {
+        setRepairItems([]);
+      }
+    }
+  }, [selectedRecord, token]);
+
+  const addRepairItem = () => {
+    setRepairItems(prev => [...prev, { 
+      id: 0, // For new items, use 0 as a temporary id
+      repairRecordId: selectedRecord?.id || 0,
+      itemId: 0,
+      quantity: 1,
+      priceAtTime: 0,
+      description: '',
+      itemName: '',
+      itemDescription: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }]);
+  };
+
+  const updateRepairItem = (index: number, field: keyof RepairItem, value: any) => {
+    setRepairItems(prev => prev.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    ));
+    
+    // Also update item name and description if itemId is changed
+    if (field === 'itemId') {
+      const selectedItem = availableItems.find(item => item.id === value);
+      if (selectedItem) {
+        setRepairItems(prev => prev.map((item, i) => 
+          i === index ? { 
+            ...item, 
+            itemId: value,
+            itemName: selectedItem.name,
+            itemDescription: selectedItem.description
+          } : item
+        ));
+      }
+    }
+  };
+
+  const removeRepairItem = (index: number) => {
+    setRepairItems(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-4">
       {error && <div className="text-red-500 bg-red-50 p-3 rounded-md">{error}</div>}
@@ -383,14 +468,25 @@ export default function AdminRecordsList() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Record</DialogTitle>
           </DialogHeader>
           {selectedRecord && isMounted && (
-            <form className="space-y-4" onSubmit={async (e) => {
+            <form className="space-y-6 overflow-y-auto pr-2" onSubmit={async (e) => {
               e.preventDefault();
               try {
+                // Format repair items for API submission
+                const formattedRepairItems = repairItems
+                  .filter(item => item.itemId > 0) // Only send items with valid itemId
+                  .map(item => ({
+                    id: item.id > 0 ? item.id : undefined, // Don't send id for new items
+                    itemId: item.itemId,
+                    quantity: item.quantity,
+                    description: item.description,
+                    price: item.priceAtTime
+                  }));
+
                 const response = await fetch(`http://localhost:4000/repair-records/${selectedRecord.id}`, {
                   method: 'PATCH',
                   headers: {
@@ -401,7 +497,8 @@ export default function AdminRecordsList() {
                     status: selectedRecord.status,
                     assignedToId: selectedRecord.assigned_to?.id,
                     expectedRepairDate: selectedRecord.expectedRepairDate,
-                    finalCost: selectedRecord.finalCost
+                    finalCost: selectedRecord.finalCost,
+                    repairItems: formattedRepairItems
                   }),
                 });
 
@@ -422,7 +519,7 @@ export default function AdminRecordsList() {
                 toast.error('Failed to update record');
               }
             }}>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <Label>Status</Label>
                   <Select 
@@ -499,9 +596,100 @@ export default function AdminRecordsList() {
                     placeholder="Enter final cost"
                   />
                 </div>
+
+                {/* Repair Items Section */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-base font-medium">Repair Items</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addRepairItem}
+                    >
+                      Add Item
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {repairItems.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No repair items added yet.</p>
+                    ) : (
+                      repairItems.map((item, index) => (
+                        <div key={index} className="flex gap-4 items-end border-b pb-4">
+                          <div className="flex-1">
+                            <Label>Item</Label>
+                            <Select 
+                              value={item.itemId.toString()}
+                              onValueChange={(value) => updateRepairItem(index, 'itemId', Number(value))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select item" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableItems.map((availItem) => (
+                                  <SelectItem key={availItem.id} value={availItem.id.toString()}>
+                                    {availItem.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {item.itemId > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {availableItems.find(i => i.id === item.itemId)?.description}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="w-28">
+                            <Label>Price (₹)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.priceAtTime}
+                              onChange={(e) => updateRepairItem(index, 'priceAtTime', Number(e.target.value))}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="w-20">
+                            <Label>Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => updateRepairItem(index, 'quantity', Number(e.target.value))}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="flex-1">
+                            <Label>Notes</Label>
+                            <Input
+                              value={item.description || ''}
+                              onChange={(e) => updateRepairItem(index, 'description', e.target.value)}
+                              placeholder="Optional notes"
+                            />
+                          </div>
+                          
+                          <Button 
+                            type="button" 
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => removeRepairItem(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-2 mt-6">
                 <Button
                   type="button"
                   variant="outline"

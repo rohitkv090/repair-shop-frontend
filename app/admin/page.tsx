@@ -1,14 +1,13 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Settings, Users, Wrench } from "lucide-react"
+import { Package, Users, Wrench } from "lucide-react"
 import { useEffect, useState } from "react"
 import { itemsApi } from "@/lib/api"
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
     totalItems: 0,
-    lowStockItems: 0,
     activeWorkers: 0,
     pendingRepairs: 0
   })
@@ -21,8 +20,7 @@ export default function AdminPage() {
           const items = itemsResponse.data || []
           setStats(prev => ({
             ...prev,
-            totalItems: items.length,
-            lowStockItems: items.filter(item => item.stock < 5).length
+            totalItems: items.length
           }))
         }
       } catch (error) {
@@ -47,18 +45,6 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalItems}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Low Stock Items
-            </CardTitle>
-            <Settings className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.lowStockItems}</div>
           </CardContent>
         </Card>
 
@@ -101,11 +87,11 @@ export default function AdminPage() {
 
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Low Stock Items</CardTitle>
+            <CardTitle>Items Management</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Low stock items list will be implemented here
+              Items management list will be implemented here
             </p>
           </CardContent>
         </Card>

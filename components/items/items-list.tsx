@@ -24,8 +24,6 @@ export default function ItemsList({ items, onEdit, onDelete }: ItemsListProps) {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -34,8 +32,6 @@ export default function ItemsList({ items, onEdit, onDelete }: ItemsListProps) {
             <TableRow key={item.id}>
               <TableCell className="font-medium">{item.name}</TableCell>
               <TableCell>{item.description}</TableCell>
-              <TableCell>₹{item.price.toFixed(2)}</TableCell>
-              <TableCell>{item.stockCount || item.stock}</TableCell>
               <TableCell className="flex gap-2">
                 {onEdit && (
                   <Button

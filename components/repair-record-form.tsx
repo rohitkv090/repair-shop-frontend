@@ -15,14 +15,13 @@ interface RepairItem {
   itemId: number;
   quantity: number;
   description?: string;
+  price: number;
 }
 
 interface Item {
   id: number;
   name: string;
   description: string;
-  price: number;
-  stockCount: number;
 }
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -141,7 +140,7 @@ export default function RepairRecordForm() {
   };
 
   const addRepairItem = () => {
-    setRepairItems(prev => [...prev, { itemId: 0, quantity: 1 }])
+    setRepairItems(prev => [...prev, { itemId: 0, quantity: 1, price: 0 }])
   }
 
   const updateRepairItem = (index: number, field: keyof RepairItem, value: any) => {
@@ -174,8 +173,13 @@ export default function RepairRecordForm() {
     if (formData.estimatedCost) formDataToSend.append('estimatedCost', formData.estimatedCost)
     if (formData.advanceAmount) formDataToSend.append('advanceAmount', formData.advanceAmount)
     
-    // Add repair items
-    const filteredRepairItems = repairItems.filter(item => item.itemId > 0)
+    // Add repair items including price
+    const filteredRepairItems = repairItems.filter(item => item.itemId > 0).map(item => ({
+      itemId: item.itemId,
+      quantity: item.quantity,
+      description: item.description,
+      price: item.price
+    }))
     if (filteredRepairItems.length > 0) {
       formDataToSend.append('repairItems', JSON.stringify(filteredRepairItems))
     }
@@ -378,7 +382,10 @@ export default function RepairRecordForm() {
                 <Label>Item</Label>
                 <Select 
                   value={item.itemId.toString()} 
-                  onValueChange={(value) => updateRepairItem(index, 'itemId', Number(value))}
+                  onValueChange={(value) => {
+                    const selectedItemId = Number(value);
+                    updateRepairItem(index, 'itemId', selectedItemId);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select item" />
@@ -388,9 +395,8 @@ export default function RepairRecordForm() {
                       <SelectItem 
                         key={item.id} 
                         value={item.id.toString()}
-                        disabled={item.stockCount === 0}
                       >
-                        {item.name} ({item.stockCount} in stock) - ₹{item.price}
+                        {item.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -401,12 +407,22 @@ export default function RepairRecordForm() {
                   </p>
                 )}
               </div>
+              <div className="w-32">
+                <Label>Price (₹)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.price}
+                  onChange={(e) => updateRepairItem(index, 'price', Number(e.target.value))}
+                  required
+                />
+              </div>
               <div className="w-24">
                 <Label>Quantity</Label>
                 <Input
                   type="number"
                   min="1"
-                  max={availableItems.find(i => i.id === item.itemId)?.stockCount || 1}
                   value={item.quantity}
                   onChange={(e) => updateRepairItem(index, 'quantity', Number(e.target.value))}
                 />
@@ -429,11 +445,6 @@ export default function RepairRecordForm() {
               </Button>
             </div>
           ))}
-          {repairItems.length > 0 && (
-            <div className="text-sm text-muted-foreground italic">
-              Note: Items with 0 stock are disabled
-            </div>
-          )}
         </div>
       </div>
 

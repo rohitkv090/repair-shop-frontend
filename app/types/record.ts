@@ -1,42 +1,65 @@
-export type Record = {
-  id: number;
+export interface Record {
+  id: string;
+  userId: string;
   customerName: string;
+  customerNumber: string;
   expectedRepairDate: string;
   deviceTakenOn: string;
-  status: "pending" | "in-progress" | "completed";
-  assigned_to?: {
-    id: number;
-    name: string;
-  };
-  images: MediaFile[];
-  videos: MediaFile[];
-  description: string | null;
-  customerNumber: string;
-  deviceCompany: string | null;
-  deviceModel: string | null;
-  deviceColor: string | null;
-  devicePassword: string | null;
-  deviceIssue: string | null;
-  createdAt: string;
-  updatedAt: string;
-  repairItems: RepairItem[];
-  finalCost: number | null;
-};
+  deviceCompany?: string;
+  deviceModel?: string;
+  deviceColor?: string;
+  devicePassword?: string;
+  deviceIssue: string;
+  description?: string;
+  estimatedCost?: number;
+  advanceAmount?: number;
+  finalCost?: number;
+  assignedToId?: string;
+  assignedTo?: UserBrief;
+  status: RecordStatus;
+  images?: string[];
+  videos?: string[];
+  repairItems?: RepairItem[];
+}
 
-type MediaFile = {
-  id: number;
-  url: string;
-};
-
-type RepairItem = {
-  id: number;
-  repairRecordId: number;
-  itemId: number;
+export interface RepairItem {
+  itemId: string;
   quantity: number;
-  priceAtTime: number;
-  description: string;
-  itemName: string;
-  itemDescription: string;
-  createdAt: string;
-  updatedAt: string;
-};
+  description?: string;
+  price: number;
+}
+
+export interface CreateRecordDto {
+  customerName: string;
+  customerNumber: string;
+  expectedRepairDate: string;
+  deviceTakenOn: string;
+  deviceCompany?: string;
+  deviceModel?: string;
+  deviceColor?: string;
+  devicePassword?: string;
+  deviceIssue: string;
+  description?: string;
+  estimatedCost?: number;
+  advanceAmount?: number;
+  repairItems?: RepairItem[];
+}
+
+export interface UpdateRecordDto {
+  customerName?: string;
+  customerNumber?: string;
+  expectedRepairDate?: string;
+  deviceTakenOn?: string;
+  deviceCompany?: string;
+  deviceModel?: string;
+  deviceColor?: string;
+  devicePassword?: string;
+  deviceIssue?: string;
+  description?: string;
+  estimatedCost?: number;
+  advanceAmount?: number;
+  finalCost?: number;
+  assignedToId?: string;
+  status?: RecordStatus;
+  repairItems?: RepairItem[];
+}
