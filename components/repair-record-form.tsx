@@ -6,22 +6,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { ChevronDown, ChevronUp, X } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react"
 import { useAuth } from './AuthContext'
 import toast from 'react-hot-toast'
 import { MediaCapture } from './MediaCapture'
+import AddEditItemDialog from './items/add-edit-item-dialog'
+import { Item } from '@/app/types/item'
 
 interface RepairItem {
   itemId: number;
   quantity: number;
   description?: string;
   price: number;
-}
-
-interface Item {
-  id: number;
-  name: string;
-  description: string;
 }
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -32,6 +28,7 @@ export default function RepairRecordForm() {
   const [isMounted, setIsMounted] = useState(false);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const { token } = useAuth();
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerNumber: '',
@@ -152,6 +149,12 @@ export default function RepairRecordForm() {
   const removeRepairItem = (index: number) => {
     setRepairItems(prev => prev.filter((_, i) => i !== index))
   }
+
+  const handleAddNewItem = (newItem: Item) => {
+    // Add the newly created item to the available items list
+    setAvailableItems(prev => [...prev, newItem]);
+    toast.success('New item created successfully');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -371,9 +374,14 @@ export default function RepairRecordForm() {
       <div className="border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Label>Repair Items</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addRepairItem}>
-            Add Item
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsAddItemDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Create New Item
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={addRepairItem}>
+              Add Item
+            </Button>
+          </div>
         </div>
         <div className="space-y-4">
           {repairItems.map((item, index) => (
@@ -403,7 +411,7 @@ export default function RepairRecordForm() {
                 </Select>
                 {item.itemId > 0 && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    {availableItems.find(i => i.id === item.itemId)?.description}
+                    {availableItems.find(i => parseInt(i.id) === item.itemId)?.description}
                   </p>
                 )}
               </div>
@@ -571,6 +579,14 @@ export default function RepairRecordForm() {
       </div>
 
       <Button type="submit" className="w-full">Create Repair Record</Button>
+
+      {/* Add New Item Dialog */}
+      <AddEditItemDialog
+        open={isAddItemDialogOpen}
+        onClose={() => setIsAddItemDialogOpen(false)}
+        onSuccess={handleAddNewItem}
+        item={null}
+      />
     </form>
   )
 }

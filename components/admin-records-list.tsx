@@ -28,8 +28,10 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { Badge } from "./ui/badge"
-import { Search, Edit, Filter, Download } from "lucide-react"
+import { Search, Edit, Filter, Download, Plus } from "lucide-react"
 import toast from 'react-hot-toast'
+import AddEditItemDialog from './items/add-edit-item-dialog'
+import { Item } from '@/app/types/item'
 
 type MediaFile = {
   id: number;
@@ -86,6 +88,7 @@ export default function AdminRecordsList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [availableItems, setAvailableItems] = useState<{ id: number; name: string; description: string }[]>([]);
   const [repairItems, setRepairItems] = useState<RepairItem[]>([]);
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
 
   // Client-side only rendering for date-dependent content
   const [isMounted, setIsMounted] = useState(false);
@@ -326,6 +329,12 @@ export default function AdminRecordsList() {
 
   const removeRepairItem = (index: number) => {
     setRepairItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddNewItem = (newItem: Item) => {
+    // Add the newly created item to the available items list
+    setAvailableItems(prev => [...prev, newItem as any]);
+    toast.success('New item created successfully');
   };
 
   return (
@@ -601,14 +610,24 @@ export default function AdminRecordsList() {
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <Label className="text-base font-medium">Repair Items</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addRepairItem}
-                    >
-                      Add Item
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setIsAddItemDialogOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Create New Item
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={addRepairItem}
+                      >
+                        Add Item
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="space-y-4">
@@ -868,6 +887,14 @@ export default function AdminRecordsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Add New Item Dialog */}
+      <AddEditItemDialog
+        open={isAddItemDialogOpen}
+        onClose={() => setIsAddItemDialogOpen(false)}
+        onSuccess={handleAddNewItem}
+        item={null}
+      />
     </div>
   );
 }
