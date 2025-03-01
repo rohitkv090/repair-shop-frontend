@@ -85,7 +85,7 @@ export default function AddEditItemDialog({
         <DialogHeader>
           <DialogTitle>{item ? 'Edit Item' : 'Add New Item'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -112,11 +112,15 @@ export default function AddEditItemDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="button" 
+              disabled={isLoading}
+              onClick={handleSubmit}
+            >
               {isLoading ? 'Saving...' : item ? 'Update' : 'Create'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

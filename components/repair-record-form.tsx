@@ -375,7 +375,12 @@ export default function RepairRecordForm() {
         <div className="flex items-center justify-between mb-4">
           <Label>Repair Items</Label>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsAddItemDialogOpen(true)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsAddItemDialogOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-1" /> Create New Item
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={addRepairItem}>
