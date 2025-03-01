@@ -89,6 +89,9 @@ export default function AdminRecordsList() {
   const [availableItems, setAvailableItems] = useState<{ id: number; name: string; description: string }[]>([]);
   const [repairItems, setRepairItems] = useState<RepairItem[]>([]);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const LIMIT = 10; // Fixed limit of 10 records per page
 
   // Client-side only rendering for date-dependent content
   const [isMounted, setIsMounted] = useState(false);
@@ -130,8 +133,15 @@ export default function AdminRecordsList() {
     setError(null);
     try {
       const baseUrl = "http://localhost:4000/repair-records";
-      const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
-      const url = `${baseUrl}${query}`;
+      const query = new URLSearchParams();
+      if (searchTerm) query.set('search', searchTerm);
+      
+      // Calculate offset based on current page
+      const offset = (currentPage - 1) * LIMIT;
+      query.set('limit', LIMIT.toString());
+      query.set('offset', offset.toString());
+      
+      const url = `${baseUrl}?${query.toString()}`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -139,17 +149,25 @@ export default function AdminRecordsList() {
       });
       const data = await response.json();
       if (data.success) {
-        setRecords(data.data);
+        setRecords(data.data.records);
+        setTotalRecords(data.data.total);
+        // Note: data.data.page and data.data.limit are also available if needed
       } else {
         throw new Error(data.message);
       }
     } catch (error) {
+      console.log(error);
       setError("Failed to fetch records. Please try again later.");
       console.error("Error fetching records:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!token) return;
+    fetchRecords(searchTerm);
+  }, [token, currentPage, searchTerm]); // Add currentPage as dependency
 
   const fetchRecordDetails = async (recordId: number) => {
     try {
@@ -337,6 +355,9 @@ export default function AdminRecordsList() {
     toast.success('New item created successfully');
   };
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalRecords / LIMIT);
+
   return (
     <div className="space-y-4">
       {error && <div className="text-red-500 bg-red-50 p-3 rounded-md">{error}</div>}
@@ -466,6 +487,36 @@ export default function AdminRecordsList() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between px-2">
+        <p className="text-sm text-muted-foreground">
+          Showing {records.length} of {totalRecords} records
+        </p>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1 || loading}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center justify-center min-w-[5rem]">
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || loading}
+          >
+            Next
+          </Button>
+        </div>
       </div>
 
       {/* Edit Dialog */}
@@ -744,11 +795,11 @@ export default function AdminRecordsList() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="font-bold">Customer Name</Label>
-                    <p className="mt-1">{viewingRecord.customerName}</p>
+                    <p className="mt-1">{viewingRecord?.customerName}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Customer Phone</Label>
-                    <p className="mt-1">{viewingRecord.customerNumber}</p>
+                    <p className="mt-1">{viewingRecord?.customerNumber}</p>
                   </div>
                 </div>
               </div>
@@ -760,18 +811,18 @@ export default function AdminRecordsList() {
                   <div>
                     <Label className="font-bold">Status</Label>
                     <div className="mt-1">
-                      <Badge variant="outline" className={getStatusColor(viewingRecord.status)}>
-                        {viewingRecord.status.charAt(0).toUpperCase() + viewingRecord.status.slice(1)}
+                      <Badge variant="outline" className={getStatusColor(viewingRecord?.status || '')}>
+                        {viewingRecord?.status.charAt(0).toUpperCase() + viewingRecord?.status.slice(1)}
                       </Badge>
                     </div>
                   </div>
                   <div>
                     <Label className="font-bold">Assigned To</Label>
-                    <p className="mt-1">{viewingRecord.assigned_to?.name || 'Unassigned'}</p>
+                    <p className="mt-1">{viewingRecord?.assigned_to?.name || 'Unassigned'}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Final Cost</Label>
-                    <p className="mt-1">₹{viewingRecord.finalCost || 'Not set'}</p>
+                    <p className="mt-1">₹{viewingRecord?.finalCost || 'Not set'}</p>
                   </div>
                 </div>
               </div>
@@ -782,19 +833,19 @@ export default function AdminRecordsList() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="font-bold">Expected Repair Date</Label>
-                    <p className="mt-1">{formatDate(viewingRecord.expectedRepairDate)}</p>
+                    <p className="mt-1">{formatDate(viewingRecord?.expectedRepairDate || '')}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Device Taken On</Label>
-                    <p className="mt-1">{formatDate(viewingRecord.deviceTakenOn)}</p>
+                    <p className="mt-1">{formatDate(viewingRecord?.deviceTakenOn || '')}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Created At</Label>
-                    <p className="mt-1">{formatDate(viewingRecord.createdAt)}</p>
+                    <p className="mt-1">{formatDate(viewingRecord?.createdAt || '')}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Last Updated</Label>
-                    <p className="mt-1">{formatDate(viewingRecord.updatedAt)}</p>
+                    <p className="mt-1">{formatDate(viewingRecord?.updatedAt || '')}</p>
                   </div>
                 </div>
               </div>
@@ -805,19 +856,19 @@ export default function AdminRecordsList() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="font-bold">Company</Label>
-                    <p className="mt-1">{viewingRecord.deviceCompany || 'Not specified'}</p>
+                    <p className="mt-1">{viewingRecord?.deviceCompany || 'Not specified'}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Model</Label>
-                    <p className="mt-1">{viewingRecord.deviceModel || 'Not specified'}</p>
+                    <p className="mt-1">{viewingRecord?.deviceModel || 'Not specified'}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Color</Label>
-                    <p className="mt-1">{viewingRecord.deviceColor || 'Not specified'}</p>
+                    <p className="mt-1">{viewingRecord?.deviceColor || 'Not specified'}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Password</Label>
-                    <p className="mt-1">{viewingRecord.devicePassword || 'Not provided'}</p>
+                    <p className="mt-1">{viewingRecord?.devicePassword || 'Not provided'}</p>
                   </div>
                 </div>
               </div>
@@ -828,17 +879,17 @@ export default function AdminRecordsList() {
                 <div className="space-y-4">
                   <div>
                     <Label className="font-bold">Device Issue</Label>
-                    <p className="mt-1">{viewingRecord.deviceIssue || 'No issue specified'}</p>
+                    <p className="mt-1">{viewingRecord?.deviceIssue || 'No issue specified'}</p>
                   </div>
                   <div>
                     <Label className="font-bold">Additional Description</Label>
-                    <p className="mt-1">{viewingRecord.description || 'No description provided'}</p>
+                    <p className="mt-1">{viewingRecord?.description || 'No description provided'}</p>
                   </div>
                 </div>
               </div>
 
               {/* Repair Items */}
-              {viewingRecord.repairItems && viewingRecord.repairItems.length > 0 && (
+              {viewingRecord?.repairItems && viewingRecord.repairItems.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Repair Items</h3>
                   <div className="border rounded-lg overflow-hidden">
