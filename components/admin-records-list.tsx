@@ -92,6 +92,7 @@ export default function AdminRecordsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const LIMIT = 10; // Fixed limit of 10 records per page
+  const [downloadingRecordId, setDownloadingRecordId] = useState<number | null>(null);
   
   // Month filtering state
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -277,6 +278,7 @@ export default function AdminRecordsList() {
   };
 
   const handleDownloadReceipt = async (recordId: number) => {
+    setDownloadingRecordId(recordId);
     try {
       const response = await fetch(`http://localhost:4000/repair-records/${recordId}/receipt`, {
         headers: {
@@ -297,9 +299,12 @@ export default function AdminRecordsList() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      toast.success('Receipt downloaded successfully');
     } catch (error) {
       console.error('Error downloading receipt:', error);
       toast.error('Failed to download receipt');
+    } finally {
+      setDownloadingRecordId(null);
     }
   };
 
@@ -532,8 +537,9 @@ export default function AdminRecordsList() {
                         e.stopPropagation();
                         handleDownloadReceipt(record.id);
                       }}
+                      disabled={downloadingRecordId === record.id}
                     >
-                      <Download className="h-4 w-4" />
+                      {downloadingRecordId === record.id ? 'Downloading...' : <Download className="h-4 w-4" />}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -649,7 +655,9 @@ export default function AdminRecordsList() {
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="in-progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
+
+                      </SelectContent>
+                    
                   </Select>
                 </div>
 
