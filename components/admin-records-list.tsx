@@ -92,9 +92,42 @@ export default function AdminRecordsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const LIMIT = 10; // Fixed limit of 10 records per page
+  
+  // Month filtering state
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
 
   // Client-side only rendering for date-dependent content
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Generate list of months for the dropdown (current year and previous year)
+  const getMonthOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const previousYear = currentYear - 1;
+    
+    // Add months for current year and previous year
+    for (let year = currentYear; year >= previousYear; year--) {
+      for (let month = 12; month >= 1; month--) {
+        // Skip future months for current year
+        if (year === currentYear && month > currentDate.getMonth() + 1) continue;
+        
+        const monthStr = month.toString().padStart(2, '0');
+        const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
+        options.push({
+          value: `${year}-${monthStr}`,
+          label: `${monthName} ${year}`
+        });
+      }
+    }
+    
+    return options;
+  };
+
+  const monthOptions = getMonthOptions();
 
   useEffect(() => {
     setIsMounted(true);
@@ -102,8 +135,8 @@ export default function AdminRecordsList() {
 
   useEffect(() => {
     if (!token) return;
-    fetchRecords(null);
-  }, [token]);
+    fetchRecords(searchTerm);
+  }, [token, currentPage, searchTerm, selectedMonth]); // Add selectedMonth as dependency
 
   useEffect(() => {
     const fetchWorkers = async () => {
@@ -132,6 +165,11 @@ export default function AdminRecordsList() {
     setLoading(true);
     setError(null);
     try {
+      // Parse the selected month to get start and end dates
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0); // Last day of the month
+      
       const baseUrl = "http://localhost:4000/repair-records";
       const query = new URLSearchParams();
       if (searchTerm) query.set('search', searchTerm);
@@ -140,6 +178,10 @@ export default function AdminRecordsList() {
       const offset = (currentPage - 1) * LIMIT;
       query.set('limit', LIMIT.toString());
       query.set('offset', offset.toString());
+      
+      // Add date range parameters
+      query.set('startDate', startDate.toISOString().split('T')[0]); // Format as YYYY-MM-DD
+      query.set('endDate', endDate.toISOString().split('T')[0]); // Format as YYYY-MM-DD
       
       const url = `${baseUrl}?${query.toString()}`;
       const response = await fetch(url, {
@@ -163,11 +205,6 @@ export default function AdminRecordsList() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!token) return;
-    fetchRecords(searchTerm);
-  }, [token, currentPage, searchTerm]); // Add currentPage as dependency
 
   const fetchRecordDetails = async (recordId: number) => {
     try {
@@ -374,6 +411,23 @@ export default function AdminRecordsList() {
             />
           </div>
         </div>
+        
+        <div className="w-full sm:w-[180px]">
+          <Label className="text-sm font-medium">Filter by Month</Label>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select month" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
         <div className="w-full sm:w-[180px]">
           <Label className="text-sm font-medium">Status Filter</Label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -389,7 +443,7 @@ export default function AdminRecordsList() {
           </Select>
         </div>
       </div>
-
+      
       <div className="rounded-md border">
         <Table>
           <TableHeader>

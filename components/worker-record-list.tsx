@@ -7,6 +7,8 @@ import { useAuth } from './AuthContext'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { MediaViewer } from './MediaViewer'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 type MediaFile = {
   id: number;
@@ -59,17 +61,57 @@ export default function WorkerRecordList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const LIMIT = 10; // Fixed limit of 10 records per page
+  
+  // Month filtering state
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
+
+  // Generate list of months for the dropdown (current year and previous year)
+  const getMonthOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const previousYear = currentYear - 1;
+    
+    // Add months for current year and previous year
+    for (let year = currentYear; year >= previousYear; year--) {
+      for (let month = 12; month >= 1; month--) {
+        // Skip future months for current year
+        if (year === currentYear && month > currentDate.getMonth() + 1) continue;
+        
+        const monthStr = month.toString().padStart(2, '0');
+        const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
+        options.push({
+          value: `${year}-${monthStr}`,
+          label: `${monthName} ${year}`
+        });
+      }
+    }
+    
+    return options;
+  };
+
+  const monthOptions = getMonthOptions();
 
   useEffect(() => {
     fetchRecords()
-  }, [token, currentPage]) // Add currentPage as dependency
+  }, [token, currentPage, selectedMonth]) // Add selectedMonth as dependency
 
   const fetchRecords = async () => {
     try {
+      // Parse the selected month to get start and end dates
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0); // Last day of the month
+      
       const query = new URLSearchParams({
         status: 'pending',
         offset: ((currentPage - 1) * LIMIT).toString(),
-        limit: LIMIT.toString()
+        limit: LIMIT.toString(),
+        startDate: startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        endDate: endDate.toISOString().split('T')[0] // Format as YYYY-MM-DD
       });
 
       const response = await fetch(`http://localhost:4000/repair-records?${query.toString()}`, {
@@ -133,6 +175,26 @@ export default function WorkerRecordList() {
           <span className="block sm:inline">{errorMessage}</span>
         </div>
       )}
+      
+      {/* Month selector */}
+      <div className="flex items-end space-x-4">
+        <div className="w-[250px]">
+          <Label className="text-sm font-medium mb-1 block">Filter by Month</Label>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select month" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
       <div className="space-y-4">
         {records.map((record) => (
           <Card key={record.id} className="overflow-hidden">
