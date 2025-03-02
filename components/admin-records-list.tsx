@@ -74,6 +74,8 @@ export type Record = {
   updatedAt: string;
   repairItems: RepairItem[];
   finalCost: number;
+  advanceAmount: number;
+  products: { id: number; name: string }[];
 };
 
 export default function AdminRecordsList() {
@@ -703,7 +705,7 @@ export default function AdminRecordsList() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <Label>Final Cost</Label>
                   <Input
                     type="number"
@@ -717,7 +719,7 @@ export default function AdminRecordsList() {
                     }
                     placeholder="Enter final cost"
                   />
-                </div>
+                </div> */}
 
                 {/* Repair Items Section */}
                 <div className="border rounded-lg p-4">
@@ -897,8 +899,8 @@ export default function AdminRecordsList() {
                     <p className="mt-1">{viewingRecord?.assigned_to?.name || 'Unassigned'}</p>
                   </div>
                   <div>
-                    <Label className="font-bold">Final Cost</Label>
-                    <p className="mt-1">₹{viewingRecord?.finalCost || 'Not set'}</p>
+                    <Label className="font-bold">Advance Amount</Label>
+                    <p className="mt-1">₹{viewingRecord?.advanceAmount || 'Not set'}</p>
                   </div>
                 </div>
               </div>
