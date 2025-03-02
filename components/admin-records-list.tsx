@@ -866,6 +866,20 @@ export default function AdminRecordsList() {
                 </div>
               </div>
 
+                            {/* Products */}
+                            {viewingRecord?.products && viewingRecord.products.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-3">Products</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingRecord.products.map((product) => (
+                      <Badge key={product.id} variant="secondary">
+                        {product.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Status, Assignment and Cost */}
               <div>
                 <h3 className="text-lg font-semibold mb-3">Status & Details</h3>
@@ -959,7 +973,6 @@ export default function AdminRecordsList() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Item Name</TableHead>
-                          <TableHead>Description</TableHead>
                           <TableHead>Quantity</TableHead>
                           <TableHead>Price</TableHead>
                         </TableRow>
@@ -968,7 +981,6 @@ export default function AdminRecordsList() {
                         {viewingRecord.repairItems.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell>{item.itemName}</TableCell>
-                            <TableCell>{item.description}</TableCell>
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>₹{item.priceAtTime}</TableCell>
                           </TableRow>
@@ -978,6 +990,7 @@ export default function AdminRecordsList() {
                   </div>
                 </div>
               )}
+
 
               {/* Media */}
               <div>

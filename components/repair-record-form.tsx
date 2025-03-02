@@ -27,6 +27,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export default function RepairRecordForm() {
   const [isMounted, setIsMounted] = useState(false);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
   const { token } = useAuth();
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,6 +45,8 @@ export default function RepairRecordForm() {
     advanceAmount: '',
     assignedToId: '',
   })
+
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
   // Helper function to format date for datetime-local input
   function formatDateForInput(date: Date): string {
@@ -83,12 +86,32 @@ export default function RepairRecordForm() {
       }
     };
 
+    // Fetch available products
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:4000/products', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setAvailableProducts(data.data);
+        } else {
+          console.error('Failed to fetch products:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+
     if (token) {
       fetchItems();
+      fetchProducts();
     }
   }, [token]);
 
-  const [showDeviceInfo, setShowDeviceInfo] = useState(false)
+  // const [showDeviceInfo, setShowDeviceInfo] = useState(false)
   const [repairItems, setRepairItems] = useState<RepairItem[]>([])
   const [images, setImages] = useState<File[]>([])
   const [videos, setVideos] = useState<File[]>([])
@@ -136,19 +159,19 @@ export default function RepairRecordForm() {
     }
   };
 
-  const addRepairItem = () => {
-    setRepairItems(prev => [...prev, { itemId: 0, quantity: 1, price: 0 }])
-  }
+  // const addRepairItem = () => {
+  //   setRepairItems(prev => [...prev, { itemId: 0, quantity: 1, price: 0 }])
+  // }
 
-  const updateRepairItem = (index: number, field: keyof RepairItem, value: any) => {
-    setRepairItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    ))
-  }
+  // const updateRepairItem = (index: number, field: keyof RepairItem, value: any) => {
+  //   setRepairItems(prev => prev.map((item, i) => 
+  //     i === index ? { ...item, [field]: value } : item
+  //   ))
+  // }
 
-  const removeRepairItem = (index: number) => {
-    setRepairItems(prev => prev.filter((_, i) => i !== index))
-  }
+  // const removeRepairItem = (index: number) => {
+  //   setRepairItems(prev => prev.filter((_, i) => i !== index))
+  // }
 
   const handleAddNewItem = (newItem: Item) => {
     // Add the newly created item to the available items list
@@ -187,6 +210,16 @@ export default function RepairRecordForm() {
       formDataToSend.append('repairItems', JSON.stringify(filteredRepairItems))
     }
     
+    // Add products
+    if (selectedProducts && selectedProducts.length > 0) {
+      const productsArray = selectedProducts.map(id => ({ id }));
+      console.log('Products array:', productsArray); // For debugging
+      formDataToSend.append('products', JSON.stringify(productsArray));
+    } else {
+      // If no products selected, send empty array to satisfy backend validation
+      formDataToSend.append('products', JSON.stringify([]));
+    }
+
     // Add files
     images.forEach(image => {
       formDataToSend.append('images', image)
@@ -307,7 +340,7 @@ export default function RepairRecordForm() {
       </div>
 
       {/* Device Information Section */}
-      <div className="border rounded-lg p-4 bg-gray-50">
+      {/* <div className="border rounded-lg p-4 bg-gray-50">
         <button
           type="button"
           className="flex items-center justify-between w-full text-left"
@@ -368,10 +401,10 @@ export default function RepairRecordForm() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Updated Repair Items Section */}
-      <div className="border rounded-lg p-4">
+      {/* <div className="border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Label>Repair Items</Label>
           <div className="flex gap-2">
@@ -459,11 +492,64 @@ export default function RepairRecordForm() {
             </div>
           ))}
         </div>
+      </div> */}
+
+      {/* Products Section */}
+      <div className="border rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <Label>Products</Label>
+        </div>
+        <div className="space-y-4">
+          <div className="flex-1">
+            <Select
+              value=""
+              onValueChange={(value) => {
+                if (value && !selectedProducts.includes(value)) {
+                  setSelectedProducts(prev => [...prev, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select product" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableProducts.map(product => (
+                  <SelectItem 
+                    key={product.id} 
+                    value={product.id}
+                  >
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selected Products List */}
+          <div className="space-y-2">
+            {selectedProducts.map((productId, index) => {
+              const product = availableProducts.find(p => p.id === productId);
+              return product ? (
+                <div key={index} className="flex items-center justify-between p-2 bg-secondary rounded-md">
+                  <span>{product.name}</span>
+                  <Button 
+                    type="button" 
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedProducts(prev => prev.filter(id => id !== productId))}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Cost Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="estimatedCost">Estimated Cost</Label>
           <Input
             id="estimatedCost"
@@ -473,7 +559,7 @@ export default function RepairRecordForm() {
             value={formData.estimatedCost}
             onChange={handleInputChange}
           />
-        </div>
+        </div> */}
 
         <div className="space-y-2">
           <Label htmlFor="advanceAmount">Advance Amount</Label>

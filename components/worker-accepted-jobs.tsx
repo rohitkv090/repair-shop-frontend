@@ -30,6 +30,11 @@ type RepairItem = {
   updatedAt: string;
 };
 
+type Product = {
+  id: string;
+  name: string;
+};
+
 type Record = {
   id: number;
   customerName: string;
@@ -52,6 +57,7 @@ type Record = {
   createdAt: string;
   updatedAt: string;
   repairItems: RepairItem[];
+  products: Product[];
   finalCost: number;
 };
 
@@ -318,7 +324,6 @@ export default function WorkerAcceptedJobs() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>Item</TableHead>
-                              <TableHead>Description</TableHead>
                               <TableHead>Quantity</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -326,12 +331,24 @@ export default function WorkerAcceptedJobs() {
                             {record.repairItems.map((item) => (
                               <TableRow key={item.id}>
                                 <TableCell>{item.itemName}</TableCell>
-                                <TableCell>{item.description}</TableCell>
                                 <TableCell>{item.quantity}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
+                      </div>
+                    )}
+
+                    {record.products && record.products.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Products</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {record.products.map((product) => (
+                            <Badge key={product.id} variant="secondary">
+                              {product.name}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -1,3 +1,5 @@
+import { UserRole } from "@/enums/enum";
+
 export interface Record {
   id: string;
   userId: string;
@@ -20,6 +22,7 @@ export interface Record {
   images?: string[];
   videos?: string[];
   repairItems?: RepairItem[];
+  products?: { id: string; name: string; }[];
 }
 
 export interface RepairItem {
@@ -27,6 +30,19 @@ export interface RepairItem {
   quantity: number;
   description?: string;
   price: number;
+}
+
+export interface UserBrief {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export enum RecordStatus {
+  PENDING = "pending",
+  IN_PROGRESS = "in-progress",
+  COMPLETED = "completed",
 }
 
 export interface CreateRecordDto {
@@ -43,6 +59,7 @@ export interface CreateRecordDto {
   estimatedCost?: number;
   advanceAmount?: number;
   repairItems?: RepairItem[];
+  products?: { id: string; }[];
 }
 
 export interface UpdateRecordDto {
@@ -62,4 +79,5 @@ export interface UpdateRecordDto {
   assignedToId?: string;
   status?: RecordStatus;
   repairItems?: RepairItem[];
+  products?: { id: string; }[];
 }
