@@ -27,6 +27,12 @@ const routes: Route[] = [
     color: "text-violet-500"
   },
   {
+    label: 'Products',
+    icon: Package,
+    href: '/admin/products',
+    color: "text-emerald-500"
+  },
+  {
     label: 'Workers',
     icon: Users,
     href: '/admin/workers',
