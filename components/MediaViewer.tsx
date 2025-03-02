@@ -108,7 +108,10 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
           {totalFiles} {totalFiles === 1 ? 'file' : 'files'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+      <DialogContent 
+        className="max-w-5xl max-h-[90vh] flex flex-col z-50"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>Media Viewer</DialogTitle>
         </DialogHeader>
