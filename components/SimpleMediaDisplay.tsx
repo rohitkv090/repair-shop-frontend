@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { Card } from './ui/card';
-import { Play } from 'lucide-react';
+import { Play, X } from 'lucide-react';
 
 interface MediaFile {
   id: number;
@@ -18,11 +18,12 @@ interface SimpleMediaDisplayProps {
 
 export function SimpleMediaDisplay({ recordId, images, videos, maxHeight = "300px" }: SimpleMediaDisplayProps) {
   const [isMounted, setIsMounted] = useState(false);
-  const [loadedMedia, setLoadedMedia] = useState<{ type: 'image' | 'video', url: string }[]>([]);
+  const [loadedMedia, setLoadedMedia] = useState<{ type: 'image' | 'video', url: string, mimeType?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const { token } = useAuth();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -42,8 +43,8 @@ export function SimpleMediaDisplay({ recordId, images, videos, maxHeight = "300p
         throw new Error('Authentication token not found');
       }
 
-      const fetchFile = async (fileId: number) => {
-        const response = await fetch(`http://localhost:4000/repair-records/${recordId}/file/${fileId}`, {
+      const fetchFile = async (fileId: number, type: 'image' | 'video') => {
+        const response = await fetch(`http://localhost:4000/repair-records/${recordId}/${type}/${fileId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -54,12 +55,17 @@ export function SimpleMediaDisplay({ recordId, images, videos, maxHeight = "300p
         }
         
         const blob = await response.blob();
+        // Create a new blob with explicit type for videos
+        if (type === 'video') {
+          const videoBlob = new Blob([blob], { type: blob.type || 'video/mp4' });
+          return URL.createObjectURL(videoBlob);
+        }
         return URL.createObjectURL(blob);
       };
 
       const mediaPromises = [
-        ...images.map(async img => ({ type: 'image' as const, url: await fetchFile(img.id) })),
-        ...videos.map(async vid => ({ type: 'video' as const, url: await fetchFile(vid.id) }))
+        ...images.map(async img => ({ type: 'image' as const, url: await fetchFile(img.id, 'image') })),
+        ...videos.map(async vid => ({ type: 'video' as const, url: await fetchFile(vid.id, 'video') }))
       ];
 
       const loadedMediaUrls = await Promise.all(mediaPromises);
@@ -72,7 +78,22 @@ export function SimpleMediaDisplay({ recordId, images, videos, maxHeight = "300p
   };
 
   const handleVideoClick = (videoUrl: string) => {
-    setPlayingVideo(playingVideo === videoUrl ? null : videoUrl);
+    if (playingVideo === videoUrl) {
+      const video = videoRef.current;
+      if (video) {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      }
+    } else {
+      setPlayingVideo(videoUrl);
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setPlayingVideo(null);
   };
 
   if (!isMounted || (!images.length && !videos.length)) {
@@ -100,13 +121,22 @@ export function SimpleMediaDisplay({ recordId, images, videos, maxHeight = "300p
                 ) : (
                   <div className="relative w-full h-full bg-gray-100">
                     {playingVideo === media.url ? (
-                      <video
-                        src={media.url}
-                        controls
-                        autoPlay
-                        className="w-full h-full object-cover"
-                        onEnded={() => setPlayingVideo(null)}
-                      />
+                      <div className="relative w-full h-full">
+                        <video
+                          ref={videoRef}
+                          src={media.url}
+                          controls
+                          autoPlay
+                          className="w-full h-full object-cover"
+                          onEnded={handleVideoEnded}
+                        />
+                        <button 
+                          className="absolute top-1 right-1 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+                          onClick={() => setPlayingVideo(null)}
+                        >
+                          <X className="h-4 w-4 text-white" />
+                        </button>
+                      </div>
                     ) : (
                       <>
                         <video
