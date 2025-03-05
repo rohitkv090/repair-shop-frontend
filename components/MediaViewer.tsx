@@ -39,8 +39,8 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
         throw new Error('Authentication token not found');
       }
 
-      const fetchFile = async (fileId: number) => {
-        const response = await fetch(`http://localhost:4000/repair-records/${recordId}/file/${fileId}`, {
+      const fetchFile = async (fileId: number,type:string) => {
+        const response = await fetch(`http://localhost:4000/repair-records/${recordId}/${type}/${fileId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -55,8 +55,8 @@ export function MediaViewer({ recordId, images, videos }: MediaViewerProps) {
       };
 
       const mediaPromises = [
-        ...images.map(async img => ({ type: 'image' as const, url: await fetchFile(img.id) })),
-        ...videos.map(async vid => ({ type: 'video' as const, url: await fetchFile(vid.id) }))
+        ...images.map(async img => ({ type: 'image' as const, url: await fetchFile(img.id,"image") })),
+        ...videos.map(async vid => ({ type: 'video' as const, url: await fetchFile(vid.id,"video") }))
       ];
 
       const loadedMediaUrls = await Promise.all(mediaPromises);

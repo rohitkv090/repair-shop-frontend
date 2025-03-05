@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from './AuthContext'
-import { MediaViewer } from './MediaViewer'
+import { MediaDisplay } from './MediaDisplay'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from "./ui/button"
@@ -275,84 +275,108 @@ export default function WorkerAcceptedJobs() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Device Taken On: {formatDate(record.deviceTakenOn)}</p>
-                    <p className="text-sm text-gray-600">Expected Repair: {formatDate(record.expectedRepairDate)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Device: {record.deviceCompany || 'N/A'} {record.deviceModel || ''}</p>
-                    <p className="text-sm text-gray-600">Color: {record.deviceColor || 'N/A'}</p>
-                  </div>
-                </div>
-
-                {record.images && record.videos && (record.images.length > 0 || record.videos.length > 0) ? (
-                  <div className="mb-4">
-                    <MediaViewer
-                      recordId={record.id}
-                      images={record.images}
-                      videos={record.videos}
-                    />
-                  </div>
-                ) : null}
-
-                {expandedRecord === record.id.toString() && (
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Device Issue</h4>
-                      <p className="text-sm text-gray-700">{record.deviceIssue || 'No issue description provided'}</p>
-                    </div>
-                    
-                    {record.description && (
-                      <div>
-                        <h4 className="font-medium mb-2">Additional Description</h4>
-                        <p className="text-sm text-gray-700">{record.description}</p>
+                {/* Layout with media files on the left and info on the right */}
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Left side: Media files */}
+                  <div className="w-full lg:w-1/2">
+                    {record.images && record.videos && (record.images.length > 0 || record.videos.length > 0) ? (
+                      <MediaDisplay
+                        recordId={record.id}
+                        images={record.images}
+                        videos={record.videos}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-40 bg-gray-50 rounded-lg border">
+                        <p className="text-muted-foreground">No media files</p>
                       </div>
                     )}
-
-                    {record.devicePassword && (
-                      <div>
-                        <h4 className="font-medium mb-2">Device Password</h4>
-                        <p className="text-sm text-gray-700">{record.devicePassword}</p>
-                      </div>
-                    )}
-
-                    {record.repairItems && record.repairItems.length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-2">Repair Items</h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Item</TableHead>
-                              <TableHead>Quantity</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {record.repairItems.map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell>{item.itemName}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-
-                    {record.products && record.products.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium mb-2">Products</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {record.products.map((product) => (
-                            <Badge key={product.id} variant="secondary">
-                              {product.name}
-                            </Badge>
-                          ))}
+                  </div>
+                  
+                  {/* Right side: Record information */}
+                  <div className="w-full lg:w-1/2">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="p-4 rounded-lg bg-gray-50">
+                        <h4 className="font-medium mb-2">Device Information</h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-600">Device Taken On:</p>
+                            <p className="font-medium">{formatDate(record.deviceTakenOn)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Expected Repair:</p>
+                            <p className="font-medium">{formatDate(record.expectedRepairDate)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Device:</p>
+                            <p className="font-medium">{record.deviceCompany || 'N/A'} {record.deviceModel || ''}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Color:</p>
+                            <p className="font-medium">{record.deviceColor || 'N/A'}</p>
+                          </div>
                         </div>
                       </div>
-                    )}
+                      
+                      <div className="p-4 rounded-lg bg-gray-50">
+                        <h4 className="font-medium mb-2">Repair Issue</h4>
+                        <p className="text-sm text-gray-700">{record.deviceIssue || 'No issue description provided'}</p>
+                      </div>
+                      
+                      {expandedRecord === record.id.toString() && (
+                        <>
+                          {record.description && (
+                            <div className="p-4 rounded-lg bg-gray-50">
+                              <h4 className="font-medium mb-2">Additional Description</h4>
+                              <p className="text-sm text-gray-700">{record.description}</p>
+                            </div>
+                          )}
+
+                          {record.devicePassword && (
+                            <div className="p-4 rounded-lg bg-gray-50">
+                              <h4 className="font-medium mb-2">Device Password</h4>
+                              <p className="text-sm text-gray-700">{record.devicePassword}</p>
+                            </div>
+                          )}
+
+                          {record.repairItems && record.repairItems.length > 0 && (
+                            <div className="p-4 rounded-lg bg-gray-50">
+                              <h4 className="font-medium mb-2">Repair Items</h4>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Item</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {record.repairItems.map((item) => (
+                                    <TableRow key={item.id}>
+                                      <TableCell>{item.itemName}</TableCell>
+                                      <TableCell>{item.quantity}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+
+                          {record.products && record.products.length > 0 && (
+                            <div className="p-4 rounded-lg bg-gray-50">
+                              <h4 className="font-medium mb-2">Products</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {record.products.map((product) => (
+                                  <Badge key={product.id} variant="secondary">
+                                    {product.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           ))}
