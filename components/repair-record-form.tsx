@@ -178,7 +178,6 @@ export default function RepairRecordForm() {
   const handleAddNewItem = (newItem: Item) => {
     // Add the newly created item to the available items list
     setAvailableItems(prev => [...prev, newItem]);
-    toast.success('New item created successfully');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -697,7 +696,6 @@ export default function RepairRecordForm() {
         onClose={() => setIsAddProductDialogOpen(false)}
         onSuccess={(newProduct) => {
           setAvailableProducts(prev => [...prev, newProduct]);
-          toast.success('New product created successfully');
         }}
         product={null}
       />

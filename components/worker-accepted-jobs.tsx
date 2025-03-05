@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from './AuthContext'
-import { MediaDisplay } from './MediaDisplay'
+import { SimpleMediaDisplay } from './SimpleMediaDisplay'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from "./ui/button"
@@ -280,10 +280,11 @@ export default function WorkerAcceptedJobs() {
                   {/* Left side: Media files */}
                   <div className="w-full lg:w-1/2">
                     {record.images && record.videos && (record.images.length > 0 || record.videos.length > 0) ? (
-                      <MediaDisplay
+                      <SimpleMediaDisplay
                         recordId={record.id}
                         images={record.images}
                         videos={record.videos}
+                        maxHeight="400px"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-40 bg-gray-50 rounded-lg border">
@@ -305,14 +306,6 @@ export default function WorkerAcceptedJobs() {
                           <div>
                             <p className="text-gray-600">Expected Repair:</p>
                             <p className="font-medium">{formatDate(record.expectedRepairDate)}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Device:</p>
-                            <p className="font-medium">{record.deviceCompany || 'N/A'} {record.deviceModel || ''}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Color:</p>
-                            <p className="font-medium">{record.deviceColor || 'N/A'}</p>
                           </div>
                         </div>
                       </div>

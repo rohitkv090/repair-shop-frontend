@@ -396,7 +396,6 @@ export default function AdminRecordsList() {
   const handleAddNewItem = (newItem: Item) => {
     // Add the newly created item to the available items list
     setAvailableItems(prev => [...prev, newItem as any]);
-    toast.success('New item created successfully');
   };
 
   // Calculate total pages
