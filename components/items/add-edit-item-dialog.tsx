@@ -63,9 +63,13 @@ export default function AddEditItemDialog({
       if (response.success && response.data) {
         onSuccess(response.data)
         onClose()
+        toast.success(item ? 'Item updated successfully' : 'Item created successfully')
+      } else {
+        toast.error(response.message || 'Failed to save item')
       }
-    } catch (error) {
-      toast.error(item ? 'Failed to update item' : 'Failed to create item')
+    } catch (error: any) {
+      console.error('Failed to save item:', error)
+      toast.error(error?.message || 'Failed to save item. Please try again')
     } finally {
       setIsLoading(false)
     }

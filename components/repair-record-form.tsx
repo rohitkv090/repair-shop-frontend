@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import { MediaCapture } from './MediaCapture'
 import AddEditItemDialog from './items/add-edit-item-dialog'
 import { Item } from '@/app/types/item'
+import AddEditProductDialog from './products/add-edit-product-dialog'
 
 interface RepairItem {
   itemId: number;
@@ -30,6 +31,7 @@ export default function RepairRecordForm() {
   const [availableProducts, setAvailableProducts] = useState<any[]>([]);
   const { token } = useAuth();
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerNumber: '',
@@ -498,6 +500,16 @@ export default function RepairRecordForm() {
       <div className="border rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Label>Products</Label>
+          <div className="flex gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsAddProductDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Create Product
+            </Button>
+          </div>
         </div>
         <div className="space-y-4">
           <div className="flex-1">
@@ -677,6 +689,17 @@ export default function RepairRecordForm() {
         onClose={() => setIsAddItemDialogOpen(false)}
         onSuccess={handleAddNewItem}
         item={null}
+      />
+
+      {/* Add New Product Dialog */}
+      <AddEditProductDialog
+        open={isAddProductDialogOpen}
+        onClose={() => setIsAddProductDialogOpen(false)}
+        onSuccess={(newProduct) => {
+          setAvailableProducts(prev => [...prev, newProduct]);
+          toast.success('New product created successfully');
+        }}
+        product={null}
       />
     </form>
   )

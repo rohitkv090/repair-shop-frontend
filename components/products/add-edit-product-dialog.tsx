@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Product } from '@/app/types/product'
 import { productsApi } from '@/lib/products-api'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 
 interface AddEditProductDialogProps {
   open: boolean
@@ -39,6 +40,7 @@ export default function AddEditProductDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsLoading(true)
 
     try {
@@ -55,9 +57,13 @@ export default function AddEditProductDialog({
 
       if (response.success && response.data) {
         onSuccess(response.data)
+        toast.success(product ? 'Product updated successfully' : 'Product created successfully')
+      } else {
+        toast.error(response.message || 'Failed to save product')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save product:', error)
+      toast.error(error?.message || 'Failed to save product. Please try again')
     } finally {
       setIsLoading(false)
     }
